@@ -7,6 +7,7 @@ import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import {
   addEventListeners,
   createSerwist,
+  NetworkOnly,
   RuntimeCache,
 } from "serwist";
 
@@ -31,22 +32,31 @@ const serwist = createSerwist({
   clientsClaim: true,
   navigationPreload: true,
   extensions: [
-    new RuntimeCache(defaultCache, {
-      warmEntries: ["/~offline-article"],
-      fallbacks: {
-        entries: [
-          {
-            url: "/~offline-article",
-            matcher({ request }) {
-              return (
-                request.destination === "document" &&
-                new URL(request.url).pathname.startsWith("/article/")
-              );
+    new RuntimeCache(
+      [
+        {
+          matcher: /\/article\/.*/i,
+          handler: new NetworkOnly(),
+        },
+        ...defaultCache,
+      ],
+      {
+        warmEntries: ["/~offline-article"],
+        fallbacks: {
+          entries: [
+            {
+              url: "/~offline-article",
+              matcher({ request }) {
+                return (
+                  request.destination === "document" &&
+                  new URL(request.url).pathname.startsWith("/article/")
+                );
+              },
             },
-          },
-        ],
+          ],
+        },
       },
-    }),
+    ),
   ],
 });
 
